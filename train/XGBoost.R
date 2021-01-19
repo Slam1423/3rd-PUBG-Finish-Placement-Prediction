@@ -1,0 +1,462 @@
+library(data.table)
+library(xgboost)
+
+
+dt <- fread("train_V2.csv")
+test_dt <- fread("test_V2.csv")
+dt<-dt[winPlacePerc!="NA"]
+
+dt_feature_engineering <- function(subdt) {
+subdt[,`:=`(headshotrate=headshotKills/(kills+1),damagekillratio=damageDealt/(kills+1),revivekillratio=revives/(kills+1),
+            roadkillratio=roadKills/(kills+1),weaponkillratio=weaponsAcquired/(kills+1),
+            killdensity=kills/matchDuration,revivesdensity=revives/matchDuration,assistsdensity=assists/matchDuration,
+            healsdensity=heals/matchDuration,boostsdensity=boosts/matchDuration,damagedensity=damageDealt/matchDuration,
+            walkdistancedensity=walkDistance/matchDuration,weapondensity=weaponsAcquired/matchDuration,
+            swimdensity=swimDistance/matchDuration,DBNOdensity=DBNOs/matchDuration), 
+      by=c("matchId","groupId")]
+subdt[,`:=`(grouphealtotal=sum(heals),grouphealmax=max(heals),grouphealmin=min(heals),grouphealmean=mean(heals),
+            groupboosttotal=sum(boosts),groupboostmax=max(boosts),groupboostmin=min(boosts),groupboostmean=mean(boosts),
+            groupswimDistancetotal=sum(swimDistance),groupswimDistancemax=max(swimDistance),groupswimDistancemin=min(swimDistance),groupswimDistancemean=mean(swimDistance),
+            groupwalkDistancetotal=sum(walkDistance),groupwalkDistancemax=max(walkDistance),groupwalkDistancemin=min(walkDistance),groupwalkDistancemean=mean(walkDistance),
+            grouprideDistancetotal=sum(rideDistance),grouprideDistancemax=max(rideDistance),grouprideDistancemin=min(rideDistance),grouprideDistancemean=mean(rideDistance),
+            groupkillplacemax=max(killPlace),groupkillplacemin=min(killPlace),groupkillplacemean=mean(killPlace),
+            groupkillmax=max(kills),groupkillmin=min(kills),groupkillmean=mean(kills),
+            groupkilltotal=sum(kills),groupsize=.N,
+            groupheadshotkillstotal=sum(headshotKills),groupheadshotkillsmax=max(headshotKills),groupheadshotkillsmin=min(headshotKills),groupheadshotkillsmean=mean(headshotKills),
+            grouproadKillstotal=sum(roadKills),grouproadKillsmax=max(roadKills),grouproadKillsmin=min(roadKills),grouproadKillsmean=mean(roadKills),
+            groupkillStreakstotal=sum(killStreaks),groupkillStreaksmax=max(killStreaks),groupkillStreaksmin=min(killStreaks),groupkillStreaksmean=mean(killStreaks),
+            groupweapontotal=sum(weaponsAcquired),groupweaponmax=max(weaponsAcquired),groupweaponmin=min(weaponsAcquired),groupweaponmean=mean(weaponsAcquired),
+            groupassiststotal=sum(assists),groupassistsmax=max(assists),groupassistsmin=min(assists),groupassistsmean=mean(assists),
+            groupdamageDealttotal=sum(damageDealt),groupdamageDealtmax=max(damageDealt),groupdamageDealtmin=min(damageDealt),groupdamageDealtmean=mean(damageDealt),
+            groupDBNOstotal=sum(DBNOs),groupDBNOsmax=max(DBNOs),groupDBNOsmin=min(DBNOs),groupDBNOsmean=mean(DBNOs),
+            grouprevivestotal=sum(revives),grouprevivesmax=max(revives),grouprevivesmin=min(revives),grouprevivesmean=mean(revives),
+            groupvehicledestroystotal=sum(vehicleDestroys),groupvehicledestroysmax=max(vehicleDestroys),groupvehicledestroymin=min(vehicleDestroys),groupvehicledestroymean=mean(vehicleDestroys),
+            groupheadshotratemean=mean(headshotrate),groupheadshotratemax=max(headshotrate),
+            groupheadshotratemin=min(headshotrate),groupheadshotratetotal=sum(headshotrate),
+            groupdamagekillratiomean=mean(damagekillratio),groupdamagekillratiomin=min(damagekillratio),
+            groupdamagekillratiomax=max(damagekillratio),groupdamagekillratiototal=sum(damagekillratio),
+            grouprevivekillratiomean=mean(revivekillratio),grouprevivekillratiomin=min(revivekillratio),
+            grouprevivekillratiomax=max(revivekillratio),grouprevivekillratiototal=sum(revivekillratio),
+            grouproadkillratiomean=mean(roadkillratio),grouproadkillratiomin=min(roadkillratio),
+            grouproadkillratiomax=max(roadkillratio),grouproadkillratiototal=sum(roadkillratio),
+            groupweaponkillratiomean=mean(weaponkillratio),groupweaponkillratiomin=min(weaponkillratio),
+            groupweaponkillratiomax=max(weaponkillratio),groupweaponkillratiototal=sum(weaponkillratio)),
+      by=c("matchId","groupId")]
+subdt[,`:=`(groupkilldensity=groupkilltotal/matchDuration,grouphealdensity=grouphealtotal/matchDuration,groupboostdensity=groupboosttotal/matchDuration,
+            groupdamagedensity=groupdamageDealttotal/matchDuration,groupDBNOsdensity=groupDBNOstotal/matchDuration,
+            groupevivesdensity=grouprevivestotal/matchDuration,groupwalkdensity=groupwalkDistancetotal/matchDuration,
+            groupswimdensity=groupswimDistancetotal/matchDuration,groupridedensity=grouprideDistancetotal/matchDuration),
+      by=c("matchId","groupId")]
+subdt[,`:=`(groupkilldensitymax=max(groupkilldensity),groupkilldensitymean=max(groupkilldensity),
+            groupkilldensitymin=min(groupkilldensity),groupkilldensitytotal=sum(groupkilldensity),
+            grouphealdensitymin=min(grouphealdensity),grouphealdensitymean=min(grouphealdensity),
+            grouphealdensitymax=max(grouphealdensity),grouphealdensitytotal=sum(grouphealdensity),
+            groupboostdensitymin=min(groupboostdensity),groupboostdensitymean=min(groupboostdensity),
+            groupboostdensitymax=max(groupboostdensity),groupboostdensitytotal=sum(groupboostdensity),
+            groupdamagedensitymin=min(groupdamagedensity),groupdamagedensitymean=min(groupdamagedensity),
+            groupdamagedensitymax=max(groupdamagedensity),groupdamagedensitytotal=sum(groupdamagedensity),
+            groupDBNOsdensitymin=min(groupDBNOsdensity),groupDBNOsdensitymean=min(groupDBNOsdensity),
+            groupDBNOsdensitymax=max(groupDBNOsdensity),groupDBNOsdensitytotal=sum(groupDBNOsdensity),
+            groupevivesdensitymax=max(groupevivesdensity),groupevivesdensitymean=mean(groupevivesdensity),
+            groupevivesdensitymin=min(groupevivesdensity),groupevivesdensitytotal=sum(groupevivesdensity),
+            groupwalkdensitymin=min(groupwalkdensity),groupwalkdensitymean=min(groupwalkdensity),
+            groupwalkdensitymax=max(groupwalkdensity),groupwalkdensitytotal=sum(groupwalkdensity),
+            groupswimdensitymin=min(groupswimdensity),groupswimdensitymean=mean(groupswimdensity),
+            groupswimdensitymax=max(groupswimdensity),groupswimdensitytotal=sum(groupswimdensity),
+            groupridedensitymin=min(groupridedensity),groupridedensitymean=min(groupridedensity),
+            groupridedensitymax=max(groupridedensity),groupridedensitytotal=sum(groupridedensity)),
+      by=c("matchId","groupId")]
+subdt[order(heals),healsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(boosts),boostsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(kills),killsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(DBNOs),DBNOsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(revives),revivesposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(damageDealt),damageDealtposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(headshotKills),headshotKillsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(killPlace),killPlaceposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(killStreaks),killStreaksposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(rideDistance),rideDistanceposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(roadKills),roadKillsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(swimDistance),swimDistanceposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(weaponsAcquired),weaponsAcquiredposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group<-copy(subdt[!duplicated(subdt[,groupId]),])
+subdt_group[order(grouphealtotal),grouphealtotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboosttotal),groupboosttotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealmin),grouphealminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostmin),groupboostminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealmax),grouphealmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostmax),groupboostmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealmean),grouphealmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostmean),groupboostmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimDistancetotal),groupswimDistancetotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkDistancetotal),groupwalkDistancetotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprideDistancetotal),grouprideDistancetotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimDistancemax),groupswimDistancemaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkDistancemax),groupwalkDistancemaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprideDistancemax),grouprideDistancemaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimDistancemin),groupswimDistanceminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkDistancemin),groupwalkDistanceminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprideDistancemin),grouprideDistanceminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimDistancemean),groupswimDistancemeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkDistancemean),groupwalkDistancemeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprideDistancemean),grouprideDistancemeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillplacemin),groupkillplaceminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillplacemax),groupkillplacemaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillplacemean),groupkillplacemeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilltotal),groupkilltotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillmax),groupkillmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillmin),groupkillminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillmean),groupkillmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotkillstotal),groupheadshotkillstotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotkillsmax),groupheadshotkillsmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotkillsmin),groupheadshotkillsminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotkillsmean),groupheadshotkillsmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadKillstotal),grouproadKillstotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadKillsmax),grouproadKillsmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadKillsmin),grouproadKillsminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadKillsmean),grouproadKillsmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweapontotal),groupweapontotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupassiststotal),groupassiststotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamageDealttotal),groupdamageDealttotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOstotal),groupDBNOstotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivestotal),grouprevivestotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillStreakstotal),groupkillStreakstotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillStreaksmax),groupkillStreaksmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponmax),groupweaponmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupassistsmax),groupassistsmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamageDealtmax),groupdamageDealtmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsmax),groupDBNOsmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivesmax),grouprevivesmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillStreaksmin),groupkillStreaksminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponmin),groupweaponminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupassistsmin),groupassistsminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamageDealtmin),groupdamageDealtminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsmin),groupDBNOsminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivesmin),grouprevivesminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillStreaksmean),groupkillStreaksmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponmean),groupweaponmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupassistsmean),groupassistsmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamageDealtmean),groupdamageDealtmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsmean),groupDBNOsmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivesmean),grouprevivesmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilldensity),groupkilldensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealdensity),grouphealdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostdensity),groupboostdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensity),groupdamagedensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsdensity),groupDBNOsdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupevivesdensity),groupevivesdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkdensity),groupwalkdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimdensity),groupswimdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupridedensity),groupridedensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensity),groupdamagedensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilldensitymean),groupkilldensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealdensitymean),grouphealdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostdensitymean),groupboostdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymean),groupdamagedensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsdensitymean),groupDBNOsdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupevivesdensitymean),groupevivesdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkdensitymean),groupwalkdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimdensitymean),groupswimdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupridedensitymean),groupridedensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymean),groupdamagedensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilldensitymax),groupkilldensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealdensitymax),grouphealdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostdensitymax),groupboostdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymax),groupdamagedensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsdensitymax),groupDBNOsdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupevivesdensitymax),groupevivesdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkdensitymax),groupwalkdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimdensitymax),groupswimdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupridedensitymax),groupridedensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymax),groupdamagedensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilldensitymin),groupkilldensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealdensitymin),grouphealdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostdensitymin),groupboostdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymin),groupdamagedensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsdensitymin),groupDBNOsdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupevivesdensitymin),groupevivesdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkdensitymin),groupwalkdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimdensitymin),groupswimdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupridedensitymin),groupridedensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymin),groupdamagedensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilldensitytotal),groupkilldensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealdensitytotal),grouphealdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostdensitytotal),groupboostdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitytotal),groupdamagedensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsdensitytotal),groupDBNOsdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupevivesdensitytotal),groupevivesdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkdensitytotal),groupwalkdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimdensitytotal),groupswimdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupridedensitytotal),groupridedensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitytotal),groupdamagedensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotratemean),groupheadshotratemeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagekillratiomean),groupdamagekillratiomeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivekillratiomean),grouprevivekillratiomeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadkillratiomean),grouproadkillratiomeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponkillratiomean),groupweaponkillratiomeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotratemin),groupheadshotrateminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagekillratiomin),groupdamagekillratiominposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivekillratiomin),grouprevivekillratiominposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadkillratiomin),grouproadkillratiominposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponkillratiomin),groupweaponkillratiominposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotratemax),groupheadshotratemaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagekillratiomax),groupdamagekillratiomaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivekillratiomax),grouprevivekillratiomaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadkillratiomax),grouproadkillratiomaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponkillratiomax),groupweaponkillratiomaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotratetotal),groupheadshotratetotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagekillratiototal),groupdamagekillratiototalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivekillratiototal),grouprevivekillratiototalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadkillratiototal),grouproadkillratiototalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponkillratiototal),groupweaponkillratiototalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt<-merge(subdt,subdt_group[,c(2,187:310)],all=T)
+return(subdt)
+}
+
+testdt_feature_engineering <- function(subdt) {
+subdt[,`:=`(headshotrate=headshotKills/(kills+1),damagekillratio=damageDealt/(kills+1),revivekillratio=revives/(kills+1),
+            roadkillratio=roadKills/(kills+1),weaponkillratio=weaponsAcquired/(kills+1),
+            killdensity=kills/matchDuration,revivesdensity=revives/matchDuration,assistsdensity=assists/matchDuration,
+            healsdensity=heals/matchDuration,boostsdensity=boosts/matchDuration,damagedensity=damageDealt/matchDuration,
+            walkdistancedensity=walkDistance/matchDuration,weapondensity=weaponsAcquired/matchDuration,
+            swimdensity=swimDistance/matchDuration,DBNOdensity=DBNOs/matchDuration), 
+      by=c("matchId","groupId")]
+subdt[,`:=`(grouphealtotal=sum(heals),grouphealmax=max(heals),grouphealmin=min(heals),grouphealmean=mean(heals),
+            groupboosttotal=sum(boosts),groupboostmax=max(boosts),groupboostmin=min(boosts),groupboostmean=mean(boosts),
+            groupswimDistancetotal=sum(swimDistance),groupswimDistancemax=max(swimDistance),groupswimDistancemin=min(swimDistance),groupswimDistancemean=mean(swimDistance),
+            groupwalkDistancetotal=sum(walkDistance),groupwalkDistancemax=max(walkDistance),groupwalkDistancemin=min(walkDistance),groupwalkDistancemean=mean(walkDistance),
+            grouprideDistancetotal=sum(rideDistance),grouprideDistancemax=max(rideDistance),grouprideDistancemin=min(rideDistance),grouprideDistancemean=mean(rideDistance),
+            groupkillplacemax=max(killPlace),groupkillplacemin=min(killPlace),groupkillplacemean=mean(killPlace),
+            groupkillmax=max(kills),groupkillmin=min(kills),groupkillmean=mean(kills),
+            groupkilltotal=sum(kills),groupsize=.N,
+            groupheadshotkillstotal=sum(headshotKills),groupheadshotkillsmax=max(headshotKills),groupheadshotkillsmin=min(headshotKills),groupheadshotkillsmean=mean(headshotKills),
+            grouproadKillstotal=sum(roadKills),grouproadKillsmax=max(roadKills),grouproadKillsmin=min(roadKills),grouproadKillsmean=mean(roadKills),
+            groupkillStreakstotal=sum(killStreaks),groupkillStreaksmax=max(killStreaks),groupkillStreaksmin=min(killStreaks),groupkillStreaksmean=mean(killStreaks),
+            groupweapontotal=sum(weaponsAcquired),groupweaponmax=max(weaponsAcquired),groupweaponmin=min(weaponsAcquired),groupweaponmean=mean(weaponsAcquired),
+            groupassiststotal=sum(assists),groupassistsmax=max(assists),groupassistsmin=min(assists),groupassistsmean=mean(assists),
+            groupdamageDealttotal=sum(damageDealt),groupdamageDealtmax=max(damageDealt),groupdamageDealtmin=min(damageDealt),groupdamageDealtmean=mean(damageDealt),
+            groupDBNOstotal=sum(DBNOs),groupDBNOsmax=max(DBNOs),groupDBNOsmin=min(DBNOs),groupDBNOsmean=mean(DBNOs),
+            grouprevivestotal=sum(revives),grouprevivesmax=max(revives),grouprevivesmin=min(revives),grouprevivesmean=mean(revives),
+            groupvehicledestroystotal=sum(vehicleDestroys),groupvehicledestroysmax=max(vehicleDestroys),groupvehicledestroymin=min(vehicleDestroys),groupvehicledestroymean=mean(vehicleDestroys),
+            groupheadshotratemean=mean(headshotrate),groupheadshotratemax=max(headshotrate),
+            groupheadshotratemin=min(headshotrate),groupheadshotratetotal=sum(headshotrate),
+            groupdamagekillratiomean=mean(damagekillratio),groupdamagekillratiomin=min(damagekillratio),
+            groupdamagekillratiomax=max(damagekillratio),groupdamagekillratiototal=sum(damagekillratio),
+            grouprevivekillratiomean=mean(revivekillratio),grouprevivekillratiomin=min(revivekillratio),
+            grouprevivekillratiomax=max(revivekillratio),grouprevivekillratiototal=sum(revivekillratio),
+            grouproadkillratiomean=mean(roadkillratio),grouproadkillratiomin=min(roadkillratio),
+            grouproadkillratiomax=max(roadkillratio),grouproadkillratiototal=sum(roadkillratio),
+            groupweaponkillratiomean=mean(weaponkillratio),groupweaponkillratiomin=min(weaponkillratio),
+            groupweaponkillratiomax=max(weaponkillratio),groupweaponkillratiototal=sum(weaponkillratio)),
+      by=c("matchId","groupId")]
+subdt[,`:=`(groupkilldensity=groupkilltotal/matchDuration,grouphealdensity=grouphealtotal/matchDuration,groupboostdensity=groupboosttotal/matchDuration,
+            groupdamagedensity=groupdamageDealttotal/matchDuration,groupDBNOsdensity=groupDBNOstotal/matchDuration,
+            groupevivesdensity=grouprevivestotal/matchDuration,groupwalkdensity=groupwalkDistancetotal/matchDuration,
+            groupswimdensity=groupswimDistancetotal/matchDuration,groupridedensity=grouprideDistancetotal/matchDuration),
+      by=c("matchId","groupId")]
+subdt<-subdt[,`:=`(groupkilldensitymax=max(groupkilldensity),groupkilldensitymean=max(groupkilldensity),
+                   groupkilldensitymin=min(groupkilldensity),groupkilldensitytotal=sum(groupkilldensity),
+                   grouphealdensitymin=min(grouphealdensity),grouphealdensitymean=min(grouphealdensity),
+                   grouphealdensitymax=max(grouphealdensity),grouphealdensitytotal=sum(grouphealdensity),
+                   groupboostdensitymin=min(groupboostdensity),groupboostdensitymean=min(groupboostdensity),
+                   groupboostdensitymax=max(groupboostdensity),groupboostdensitytotal=sum(groupboostdensity),
+                   groupdamagedensitymin=min(groupdamagedensity),groupdamagedensitymean=min(groupdamagedensity),
+                   groupdamagedensitymax=max(groupdamagedensity),groupdamagedensitytotal=sum(groupdamagedensity),
+                   groupDBNOsdensitymin=min(groupDBNOsdensity),groupDBNOsdensitymean=min(groupDBNOsdensity),
+                   groupDBNOsdensitymax=max(groupDBNOsdensity),groupDBNOsdensitytotal=sum(groupDBNOsdensity),
+                   groupevivesdensitymax=max(groupevivesdensity),groupevivesdensitymean=mean(groupevivesdensity),
+                   groupevivesdensitymin=min(groupevivesdensity),groupevivesdensitytotal=sum(groupevivesdensity),
+                   groupwalkdensitymin=min(groupwalkdensity),groupwalkdensitymean=min(groupwalkdensity),
+                   groupwalkdensitymax=max(groupwalkdensity),groupwalkdensitytotal=sum(groupwalkdensity),
+                   groupswimdensitymin=min(groupswimdensity),groupswimdensitymean=mean(groupswimdensity),
+                   groupswimdensitymax=max(groupswimdensity),groupswimdensitytotal=sum(groupswimdensity),
+                   groupridedensitymin=min(groupridedensity),groupridedensitymean=min(groupridedensity),
+                   groupridedensitymax=max(groupridedensity),groupridedensitytotal=sum(groupridedensity)),
+             by=c("matchId","groupId")]
+subdt[order(heals),healsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(boosts),boostsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(kills),killsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(DBNOs),DBNOsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(revives),revivesposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(damageDealt),damageDealtposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(headshotKills),headshotKillsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(killPlace),killPlaceposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(killStreaks),killStreaksposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(rideDistance),rideDistanceposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(roadKills),roadKillsposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(swimDistance),swimDistanceposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt[order(weaponsAcquired),weaponsAcquiredposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group<-copy(subdt[!duplicated(subdt[,groupId]),])
+subdt_group[order(grouphealtotal),grouphealtotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboosttotal),groupboosttotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealmin),grouphealminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostmin),groupboostminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealmax),grouphealmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostmax),groupboostmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealmean),grouphealmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostmean),groupboostmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimDistancetotal),groupswimDistancetotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkDistancetotal),groupwalkDistancetotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprideDistancetotal),grouprideDistancetotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimDistancemax),groupswimDistancemaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkDistancemax),groupwalkDistancemaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprideDistancemax),grouprideDistancemaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimDistancemin),groupswimDistanceminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkDistancemin),groupwalkDistanceminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprideDistancemin),grouprideDistanceminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimDistancemean),groupswimDistancemeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkDistancemean),groupwalkDistancemeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprideDistancemean),grouprideDistancemeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillplacemin),groupkillplaceminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillplacemax),groupkillplacemaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillplacemean),groupkillplacemeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilltotal),groupkilltotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillmax),groupkillmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillmin),groupkillminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillmean),groupkillmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotkillstotal),groupheadshotkillstotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotkillsmax),groupheadshotkillsmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotkillsmin),groupheadshotkillsminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotkillsmean),groupheadshotkillsmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadKillstotal),grouproadKillstotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadKillsmax),grouproadKillsmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadKillsmin),grouproadKillsminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadKillsmean),grouproadKillsmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweapontotal),groupweapontotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupassiststotal),groupassiststotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamageDealttotal),groupdamageDealttotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOstotal),groupDBNOstotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivestotal),grouprevivestotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillStreakstotal),groupkillStreakstotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillStreaksmax),groupkillStreaksmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponmax),groupweaponmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupassistsmax),groupassistsmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamageDealtmax),groupdamageDealtmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsmax),groupDBNOsmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivesmax),grouprevivesmaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillStreaksmin),groupkillStreaksminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponmin),groupweaponminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupassistsmin),groupassistsminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamageDealtmin),groupdamageDealtminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsmin),groupDBNOsminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivesmin),grouprevivesminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkillStreaksmean),groupkillStreaksmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponmean),groupweaponmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupassistsmean),groupassistsmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamageDealtmean),groupdamageDealtmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsmean),groupDBNOsmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivesmean),grouprevivesmeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilldensity),groupkilldensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealdensity),grouphealdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostdensity),groupboostdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensity),groupdamagedensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsdensity),groupDBNOsdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupevivesdensity),groupevivesdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkdensity),groupwalkdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimdensity),groupswimdensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupridedensity),groupridedensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensity),groupdamagedensityposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilldensitymean),groupkilldensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealdensitymean),grouphealdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostdensitymean),groupboostdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymean),groupdamagedensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsdensitymean),groupDBNOsdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupevivesdensitymean),groupevivesdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkdensitymean),groupwalkdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimdensitymean),groupswimdensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupridedensitymean),groupridedensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymean),groupdamagedensitymeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilldensitymax),groupkilldensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealdensitymax),grouphealdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostdensitymax),groupboostdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymax),groupdamagedensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsdensitymax),groupDBNOsdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupevivesdensitymax),groupevivesdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkdensitymax),groupwalkdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimdensitymax),groupswimdensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupridedensitymax),groupridedensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymax),groupdamagedensitymaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilldensitymin),groupkilldensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealdensitymin),grouphealdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostdensitymin),groupboostdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymin),groupdamagedensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsdensitymin),groupDBNOsdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupevivesdensitymin),groupevivesdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkdensitymin),groupwalkdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimdensitymin),groupswimdensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupridedensitymin),groupridedensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitymin),groupdamagedensityminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupkilldensitytotal),groupkilldensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouphealdensitytotal),grouphealdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupboostdensitytotal),groupboostdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitytotal),groupdamagedensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupDBNOsdensitytotal),groupDBNOsdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupevivesdensitytotal),groupevivesdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupwalkdensitytotal),groupwalkdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupswimdensitytotal),groupswimdensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupridedensitytotal),groupridedensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagedensitytotal),groupdamagedensitytotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotratemean),groupheadshotratemeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagekillratiomean),groupdamagekillratiomeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivekillratiomean),grouprevivekillratiomeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadkillratiomean),grouproadkillratiomeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponkillratiomean),groupweaponkillratiomeanposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotratemin),groupheadshotrateminposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagekillratiomin),groupdamagekillratiominposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivekillratiomin),grouprevivekillratiominposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadkillratiomin),grouproadkillratiominposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponkillratiomin),groupweaponkillratiominposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotratemax),groupheadshotratemaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagekillratiomax),groupdamagekillratiomaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivekillratiomax),grouprevivekillratiomaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadkillratiomax),grouproadkillratiomaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponkillratiomax),groupweaponkillratiomaxposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupheadshotratetotal),groupheadshotratetotalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupdamagekillratiototal),groupdamagekillratiototalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouprevivekillratiototal),grouprevivekillratiototalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(grouproadkillratiototal),grouproadkillratiototalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt_group[order(groupweaponkillratiototal),groupweaponkillratiototalposition:=((1:.N)-1)/(.N-1),by=matchId]
+subdt<-merge(subdt,subdt_group[,c(2,186:309)],all=T)
+return(subdt)
+}
+
+dt<-dt_feature_engineering(dt)
+test_dt<-testdt_feature_engineering(test_dt)
+dt[order(winPlacePerc),`:=`(th=round(winPlacePerc*(maxPlace-1))+1,winPlacePerc1=((1:.N)-1)/(.N-1)),by="matchId"]
+
+s=Sys.time()
+matchTypes <- list("squad-fpp", "duo-fpp", "squad", "solo-fpp", "duo", "solo", 
+                   c("normal-squad-fpp","normal-squad"), c("crashtpp","crashfpp"),  c("normal-duo-fpp",  "normal-duo"),
+                   c("flaretpp","flarefpp") ,c("normal-solo-fpp", "normal-solo"))
+
+matchID<-as.list(dt[,unique(matchId)])
+
+partition<-sample(1:length(matchID),round(0.7*length(matchID)))
+
+for(mtype in matchTypes) {
+  print(mtype)
+
+  xgb_train <- dt[matchId %in% matchID[partition] & matchType %in% mtype, c(10,12,15,17,18,30:310,312)]
+
+  xgb_test <- dt[matchId %in% matchID[-partition] & matchType %in% mtype,  c(10,12,15,17,18,30:310)]
+
+  xgb_test1 <- test_dt[matchType %in% mtype,  c(10,12,15,17,18,30:310)]
+
+  train_data <- xgb.DMatrix(data = as.matrix(xgb_train[, -c("winPlacePerc1"), with=FALSE]), label = xgb_train$winPlacePerc1)
+  test_data <- xgb.DMatrix(data = as.matrix(xgb_test))#[, -c("winPlacePerc"), with=FALSE]), label = xgb_train$winPlacePerc)
+  test_data1 <- xgb.DMatrix(data = as.matrix(xgb_test1))
+  max_depth <- 10
+  nrounds <- 1500
+  eta <- 0.015
+  if(length(mtype) > 1) {
+    max_depth <- 7
+    nrounds <- 1200
+    eta <- 0.02
+  }
+  fit <- xgboost(data=train_data,max_depth = max_depth,  nrounds = nrounds, eta=eta, objective = "reg:linear", eval_metric = "mae", verbose = 0)
+  dt[matchId %in% matchID[-partition] & matchType %in% mtype, winPlacePerc2:=predict(fit, test_data)]
+  test_dt[matchType %in% mtype,winPlacePerc2:=predict(fit, test_data1)]
+}
+mean(abs(dt[matchId %in% matchID[-partition],]$winPlacePerc2-dt[matchId %in% matchID[-partition],]$winPlacePerc1))
+
+model_prediction <- test_dt[,.(Id,winPlacePerc2)]
