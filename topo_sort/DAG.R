@@ -1,0 +1,532 @@
+library(data.table)
+
+model_prediction<-fread("model_prediction.csv")
+test_dt <- fread("test_V2.csv")
+test_dt<-test_dt[order(Id)]
+model_prediction<-model_prediction[order(Id)]
+test_dt<-cbind(test_dt,model_prediction$winPlacePerc2)
+rm(model_prediction)
+setnames(test_dt,"V2","winPlacePerc")
+
+
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder0)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder0),list(matchId,killgroup0)]
+
+ll0<-tapply(temp$killgroup0,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder1)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder1),list(matchId,killgroup1)]
+
+ll1<-tapply(temp$killgroup1,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder2)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder2),list(matchId,killgroup2)]
+ll2<-tapply(temp$killgroup2,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder3)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder3),list(matchId,killgroup3)]
+ll3<-tapply(temp$killgroup3,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder4)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder4),list(matchId,killgroup4)]
+ll4<-tapply(temp$killgroup4,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder5)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder5),list(matchId,killgroup5)]
+ll5<-tapply(temp$killgroup5,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder6)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder6),list(matchId,killgroup6)]
+ll6<-tapply(temp$killgroup6,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder7)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder7),list(matchId,killgroup7)]
+
+ll7<-tapply(temp$killgroup7,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder8)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder8),list(matchId,killgroup8)]
+ll8<-tapply(temp$killgroup8,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder9)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder9),list(matchId,killgroup9)]
+ll9<-tapply(temp$killgroup9,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder10)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder10),list(matchId,killgroup10)]
+ll10<-tapply(temp$killgroup10,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder11)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder11),list(matchId,killgroup11)]
+ll11<-tapply(temp$killgroup11,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder12)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder12),list(matchId,killgroup12)]
+ll12<-tapply(temp$killgroup12,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder13)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder13),list(matchId,killgroup13)]
+ll13<-tapply(temp$killgroup13,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder14)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder14),list(matchId,killgroup14)]
+ll14<-tapply(temp$killgroup14,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder15)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder15),list(matchId,killgroup15)]
+ll15<-tapply(temp$killgroup15,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder16)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder16),list(matchId,killgroup16)]
+ll16<-tapply(temp$killgroup16,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder17)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder17),list(matchId,killgroup17)]
+ll17<-tapply(temp$killgroup17,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder18)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder18),list(matchId,killgroup18)]
+ll18<-tapply(temp$killgroup18,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder19)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder19),list(matchId,killgroup19)]
+ll19<-tapply(temp$killgroup19,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder20)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder20),list(matchId,killgroup20)]
+ll20<-tapply(temp$killgroup20,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder21)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder21),list(matchId,killgroup21)]
+ll21<-tapply(temp$killgroup21,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder22)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder22),list(matchId,killgroup22)]
+ll22<-tapply(temp$killgroup22,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder23)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder23),list(matchId,killgroup23)]
+ll23<-tapply(temp$killgroup23,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder24)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder24),list(matchId,killgroup24)]
+ll24<-tapply(temp$killgroup24,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder25)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder25),list(matchId,killgroup25)]
+ll25<-tapply(temp$killgroup25,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder26)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder26),list(matchId,killgroup26)]
+ll26<-tapply(temp$killgroup26,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder27)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder27),list(matchId,killgroup27)]
+ll27<-tapply(temp$killgroup27,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder28)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder28),list(matchId,killgroup28)]
+
+ll28<-tapply(temp$killgroup28,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder29)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder29),list(matchId,killgroup29)]
+ll29<-tapply(temp$killgroup29,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder30)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder30),list(matchId,killgroup30)]
+ll30<-tapply(temp$killgroup30,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder31)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder31),list(matchId,killgroup31)]
+ll31<-tapply(temp$killgroup31,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder32)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder32),list(matchId,killgroup32)]
+ll32<-tapply(temp$killgroup32,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder33)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder33),list(matchId,killgroup33)]
+ll33<-tapply(temp$killgroup33,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder34)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder34),list(matchId,killgroup34)]
+ll34<-tapply(temp$killgroup34,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder36)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder36),list(matchId,killgroup36)]
+ll36<-tapply(temp$killgroup36,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder37)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder37),list(matchId,killgroup37)]
+ll37<-tapply(temp$killgroup37,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder40)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder40),list(matchId,killgroup40)]
+ll40<-tapply(temp$killgroup40,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder41)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder41),list(matchId,killgroup41)]
+ll41<-tapply(temp$killgroup41,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder43)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder43),list(matchId,killgroup43)]
+ll43<-tapply(temp$killgroup43,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder46)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder46),list(matchId,killgroup46)]
+ll46<-tapply(temp$killgroup46,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder47)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder47),list(matchId,killgroup47)]
+ll47<-tapply(temp$killgroup47,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder52)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder52),list(matchId,killgroup52)]
+ll52<-tapply(temp$killgroup52,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder55)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder55),list(matchId,killgroup55)]
+ll55<-tapply(temp$killgroup55,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder56)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder56),list(matchId,killgroup56)]
+ll56<-tapply(temp$killgroup56,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+testsortall_dt<-testsortall_dt[order(matchId,groupId,killgrouporder58)]
+temp<-testsortall_dt[!duplicated(testsortall_dt$groupId),][order(matchId,killgrouporder58),list(matchId,killgroup58)]
+ll58<-tapply(temp$killgroup58,temp$matchId,myfun<-function(kkk){
+  kkkk<-as.matrix(na.omit(rev(kkk)))
+  if(nrow(kkkk)<100){
+    kkkk<-rbind(kkkk,matrix(NA,ncol=1,nrow=(100-nrow(kkkk))))
+  }
+  return(kkkk)
+})
+rm(temp)
+aall<-mapply(linjiebiao<-function(x1,x2,x3,x4,x5,x6,x7,x8,x9,
+                                  x10,x11,x12,x13,x14,x15,x16,
+                                  x17,x18,x19,x20,x21,x22,x23,
+                                  x24,x25,x26,x27,x28,x29,x30,
+                                  x31,x32,x33,x34,x35,x36,x37,
+                                  x38,x39,x40,x41,x42,x43,x44,
+                                  x45,x46){
+  return(cbind(x1,x2,x3,x4,x5,x6,x7,x8,x9,
+               x10,x11,x12,x13,x14,x15,x16,
+               x17,x18,x19,x20,x21,x22,x23,
+               x24,x25,x26,x27,x28,x29,x30,
+               x31,x32,x33,x34,x35,x36,x37,
+               x38,x39,x40,x41,x42,x43,x44,
+               x45,x46))
+},ll0,ll1,ll2,ll3,ll4,ll5,ll6,ll7,ll8,ll9,ll10,ll11,ll12,ll13,ll14,
+ll15,ll16,ll17,ll18,ll19,ll20,ll21,ll22,ll23,ll24,ll25,ll26,ll27,
+ll28,ll29,ll30,ll31,ll32,ll33,ll34,ll36,ll37,ll40,ll41,ll43,ll46,
+ll47,ll52,ll55,ll56,ll58)
+rm(ll0,ll1,ll2,ll3,ll4,ll5,ll6,ll7,ll8,ll9,ll10,ll11,ll12,ll13,ll14,
+   ll15,ll16,ll17,ll18,ll19,ll20,ll21,ll22,ll23,ll24,ll25,ll26,ll27,
+   ll28,ll29,ll30,ll31,ll32,ll33,ll34,ll36,ll37,ll40,ll41,ll43,ll46,
+   ll47,ll52,ll55,ll56,ll58)
+aall<-lapply(data.frame(aall), reshaping<-function(lie){
+  return(matrix(lie,ncol=46,nrow=100))
+})
+
+testall_dt<-test_dt[!duplicated(test_dt[,groupId]),]
+testall_dt<-testall_dt[order(matchId,winPlacePerc)]
+ll<-tapply(testall_dt$groupId,testall_dt$matchId,myfun<-function(kkk){
+  return(as.matrix(kkk))
+})
+rm(testall_dt)
+
+aaalll<-mapply(fucking<-function(x,y){
+  if(length(y)==1){
+    return(cbind(1,y))
+  }else{
+    order<-rep(NA,length(y))
+    x<-x[1:length(y),]
+    for(i in 1:length(y)){
+      order[i]<-x[1,!(x[1,] %in% x[-1,])][which.min(match(x[1,!(x[1,] %in% x[-1,])] , y))]
+      index<-which(x[1,]==order[i])
+      x[1:(length(y)-1),index]<-x[2:length(y),index]
+      x[length(y),index]<-NA
+    }
+    return(cbind(1:length(y),order))
+  }
+},aall,ll)
+rm(aall,ll)
+
+
+aaalll<-do.call("rbind",aaalll)
+aaalll[,1]<-as.numeric(aaalll[,1])
+colnames(aaalll)<-c("winPlace","groupId")
+match_dt<-test_dt[,.(Id,groupId,matchId,winPlacePerc,numGroups,matchType,maxPlace)]
+
+result<-merge(match_dt,aaalll,all=T)
