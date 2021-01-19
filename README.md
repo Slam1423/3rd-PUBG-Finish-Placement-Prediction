@@ -36,4 +36,4 @@ I think the most important step is Postprocessing. Because usually we make predi
 
 # Our group
 
-![image]()
+![image](https://github.com/Slam1423/PUBG-Finish-Placement-Prediction/blob/main/our%20group.jpg)
